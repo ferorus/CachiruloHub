@@ -13,6 +13,23 @@ function initMap() {
     mapTypeId: google.maps.MapTypeId.ROADMAP
   }
   map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+  
+ /**/ var layer = new google.maps.FusionTablesLayer({
+  query: {
+    select: 'kml_4326',
+    from: '1vRgso0NNIocWUXffTPM1ukqAS0H3L4a60aWq6g',
+    where: "name_1 CONTAINS IGNORING CASE 'aragón'"
+  },styles: [{
+    polygonOptions: {
+      fillColor: "#FF0000",
+      fillOpacity:0.1
+    }
+  }]
+  });
+  layer.setMap(map);
+  
+ //var ctaLayer = new google.maps.KmlLayer("file:///home/marcos/Proyects/CachiruloHub/hub/web-app/js/aragon.kml");
+ // ctaLayer.setMap(map);
 }
 
 function fetchCompanies(text) {
@@ -25,11 +42,20 @@ function fetchCompanies(text) {
 }
 
 function updateList(data) {
-  $('#tableBody').html("");
+  var $tableBody=$('#tableBody');
+  $tableBody.html('');
 
   //make new rows
   $.each(data,function(index,company){
-        $("#tableBody").append("<li><a href='company/show/" + company.id + "'>" + company.name + "</a></li>");
+	$('<li><a href="company/show/"' + company.id + '>' + company.name + '</a></li>')
+	.appendTo($tableBody)
+	.mouseover(function(e){
+	    var marker = markers[company.positionId];
+	    if(marker){
+	      google.maps.event.trigger(marker,'click');
+	    }
+	})
+	;
   });
 }	
 
@@ -59,21 +85,19 @@ function updateMap(data) {
       marker.setTitle(company.name);
       marker.companies = [company]
       markers[company.positionId] = marker;              
-      attachClickEvent(marker);
+      google.maps.event.addListener(marker, 'click', markerClick);
     
   });
 }
 
-function attachClickEvent(marker) {
-  google.maps.event.addListener(marker, 'click', function() {
+function markerClick() {
+    var marker=this;
     infoWindow.content = ""
     $.each(marker.companies,function(index,company){
         var company = marker.companies[index]
         infoWindow.content += "<b><a href='company/show/" + company.id + "'>" + company.name + "</a></b> <br>"
     });
     infoWindow.open(map, marker);
-  });
-
 }
 
 $(document).ready(function() {
